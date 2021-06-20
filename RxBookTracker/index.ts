@@ -1,7 +1,9 @@
-import { Observable, of, from, fromEvent, concat } from 'rxjs';
+import { Observable, of, from, fromEvent, concat, Subscriber, interval } from 'rxjs';
 import { ajax } from 'rxjs/ajax';
 import { allBooks, allReaders } from './data';
+import { mergeMap, filter, tap } from 'rxjs/operators';
 
+//#region Creating observables
 // ending with $ is a RxJS naming convention
 // let allBooksObservable$ = Observable.create((subscriber) => {
 //     if(document.title !== 'RxBookTracker') {
@@ -44,12 +46,77 @@ import { allBooks, allReaders } from './data';
 // });
 
 
-let rdrsBtn = document.getElementById('rdrsBtn');
+// let rdrsBtn = document.getElementById('rdrsBtn');
 
-fromEvent(rdrsBtn, 'click').subscribe(event => {
-    ajax('api/readers').subscribe(ajaxResponse => {
-        console.log(ajaxResponse)
+// fromEvent(rdrsBtn, 'click').subscribe(event => {
+//     ajax('api/readers').subscribe(ajaxResponse => {
+//         console.log(ajaxResponse)
         
-        ajaxResponse.response.map(rdr => document.getElementById('readers').innerHTML += rdr.name + '<br>');
-    });
-});
+//         ajaxResponse.response.map(rdr => document.getElementById('readers').innerHTML += rdr.name + '<br>');
+//     });
+// });
+
+//#endregion
+
+//#region  Subscribing to Observables with Observers
+
+// from(allBooks).subscribe({
+//     next: book => console.info(`Title: ${book.title}`),
+//     error: err => console.error(`ERROR: ${err}`),
+//     complete: () => console.info('All done !!')
+// });
+
+// let currentTime$ = new Observable(Subscriber => {
+//     const timeString = new Date().toLocaleTimeString();
+//     Subscriber.next(timeString);
+//     Subscriber.complete();
+// });
+
+// currentTime$.subscribe(currentTime => console.log(`Observer 1: ${currentTime}`));
+
+// setTimeout(() => {
+//     currentTime$.subscribe(currentTime => console.log(`Observer 2: ${currentTime}`));
+// }, 1000);
+
+
+// setTimeout(() => {
+//     currentTime$.subscribe(currentTime => console.log(`Observer 3: ${currentTime}`));
+// }, 2000);
+
+// let tmrDiv = document.getElementById('times');
+// let tmrBtn = document.getElementById('tmrBtn');
+
+// let timer$ = interval(1000);
+
+// let timer$ = new Observable(Subscriber => {
+//     let i = 0;
+//     let intervalID = setInterval(() => {
+//         Subscriber.next(i++);
+//     }, 1000);
+//     return () => {
+//         console.log('Executing teardown code.');
+//         clearInterval(intervalID);
+//     }
+// });
+
+// let tmrSubscription = timer$.subscribe(
+//     value => tmrDiv.innerHTML += `${new Date().toLocaleTimeString()} (${value}) <br>`,
+//     null,
+//     () => console.log('All done !!')
+// );
+
+// fromEvent(tmrBtn, 'click').subscribe( () => tmrSubscription.unsubscribe());
+
+//#endregion
+
+//#region Using Operators
+
+ajax('/api/books')
+    .pipe(
+        mergeMap(ajaxResponse => ajaxResponse.response),
+        filter(book => book.publicationYear > 1950),
+        tap(oldBook => console.log(`Title: ${oldBook.title}`))
+    )
+    .subscribe(value => console.log(value));
+
+//#endregion
