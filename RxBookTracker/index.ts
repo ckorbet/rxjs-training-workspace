@@ -1,7 +1,7 @@
 import { Observable, of, from, fromEvent, concat, Subscriber, interval, throwError } from 'rxjs';
 import { ajax } from 'rxjs/ajax';
 import { allBooks, allReaders } from './data';
-import { mergeMap, filter, tap, catchError, take, takeUntil } from 'rxjs/operators';
+import { mergeMap, filter, tap, catchError, take, takeUntil, subscribeOn } from 'rxjs/operators';
 
 //#region Creating observables
 // ending with $ is a RxJS naming convention
@@ -126,32 +126,71 @@ import { mergeMap, filter, tap, catchError, take, takeUntil } from 'rxjs/operato
 //         error => console.error(`ERROR: ${error}`)
 //     );
 
-let tmrDiv = document.getElementById('times');
-let tmrBtn = document.getElementById('tmrBtn');
+// let tmrDiv = document.getElementById('times');
+// let tmrBtn = document.getElementById('tmrBtn');
 
-let timer$ = new Observable(Subscriber => {
-    let i = 0;
-    let intervalID = setInterval(() => {
-        Subscriber.next(i++);
-    }, 1000);
-    return () => {
-        console.log('Executing teardown code.');
-        clearInterval(intervalID);
+// let timer$ = new Observable(Subscriber => {
+//     let i = 0;
+//     let intervalID = setInterval(() => {
+//         Subscriber.next(i++);
+//     }, 1000);
+//     return () => {
+//         console.log('Executing teardown code.');
+//         clearInterval(intervalID);
+//     }
+// });
+
+// let cancelTime$ = fromEvent(tmrBtn, 'click');
+
+// timer$.pipe(
+//     // take(3)
+//     takeUntil(cancelTime$)
+// )
+// .subscribe(
+//     value => tmrDiv.innerHTML += `${new Date().toLocaleTimeString()} (${value}) <br>`,
+//     null,
+//     () => console.log('All done !!')
+// );
+
+//#endregion
+
+//#region Creating my own operators
+
+/**
+ * Operator:
+ * is a function, that receives config. params.
+ * must return a function, that receives an observable, and returns an observable
+ * the observable inside the function contains the logic
+ */
+const grabAndLogClassics = (year, log) => {
+    return source$ => {
+        return new Observable(subscriber => {
+            return source$.subscribe(
+                book => {
+                    if(book.publicationYear < year) {
+                        subscriber.next(book);
+                        if(log) {
+                            console.log(`Classic: ${book.title}`);
+                        }
+                    }
+                },
+                err => subscriber.error(err),
+                () => subscriber.complete()
+            );
+        });
     }
-});
+}
 
-let cancelTime$ = fromEvent(tmrBtn, 'click');
-
-timer$.pipe(
-    // take(3)
-    takeUntil(cancelTime$)
-)
-.subscribe(
-    value => tmrDiv.innerHTML += `${new Date().toLocaleTimeString()} (${value}) <br>`,
-    null,
-    () => console.log('All done !!')
-);
-
-
+ajax('/api/books')
+    .pipe(
+        mergeMap(ajaxResponse => ajaxResponse.response),
+        // filter(book => book.publicationYear > 1950),
+        // tap(oldBook => console.log(`Title: ${oldBook.title}`))
+        grabAndLogClassics(1950, true)
+    )
+    .subscribe(
+        value => console.info(`VALUE: ${value.title}`),
+        error => console.error(`ERROR: ${error}`)
+    );
 
 //#endregion
