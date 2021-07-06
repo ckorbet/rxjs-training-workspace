@@ -1,7 +1,7 @@
 import { Observable, of, from, fromEvent, concat, Subscriber, interval, throwError } from 'rxjs';
 import { ajax } from 'rxjs/ajax';
 import { allBooks, allReaders } from './data';
-import { mergeMap, filter, tap, catchError } from 'rxjs/operators';
+import { mergeMap, filter, tap, catchError, take, takeUntil } from 'rxjs/operators';
 
 //#region Creating observables
 // ending with $ is a RxJS naming convention
@@ -111,19 +111,47 @@ import { mergeMap, filter, tap, catchError } from 'rxjs/operators';
 
 //#region Using Operators
 
-ajax('/api/errors/500')
-    .pipe(
-        mergeMap(ajaxResponse => ajaxResponse.response),
-        filter(book => book.publicationYear > 1950),
-        tap(oldBook => console.log(`Title: ${oldBook.title}`)),
-        // catchError(err => of({title: 'Corduroy', author: 'Don Freeman'}))
-        // catchError((err, caught) => caught)
-        // catchError(err => { throw `Something wrong happened - ${err}`; } )
-        catchError(err => { return throwError(err.message); } )
-    )
-    .subscribe(
-        value => console.info(`VALUE: ${value.title}`),
-        error => console.error(`ERROR: ${error}`)
-    );
+// ajax('/api/errors/500')
+//     .pipe(
+//         mergeMap(ajaxResponse => ajaxResponse.response),
+//         filter(book => book.publicationYear > 1950),
+//         tap(oldBook => console.log(`Title: ${oldBook.title}`)),
+//         // catchError(err => of({title: 'Corduroy', author: 'Don Freeman'}))
+//         // catchError((err, caught) => caught)
+//         // catchError(err => { throw `Something wrong happened - ${err}`; } )
+//         catchError(err => { return throwError(err.message); } )
+//     )
+//     .subscribe(
+//         value => console.info(`VALUE: ${value.title}`),
+//         error => console.error(`ERROR: ${error}`)
+//     );
+
+let tmrDiv = document.getElementById('times');
+let tmrBtn = document.getElementById('tmrBtn');
+
+let timer$ = new Observable(Subscriber => {
+    let i = 0;
+    let intervalID = setInterval(() => {
+        Subscriber.next(i++);
+    }, 1000);
+    return () => {
+        console.log('Executing teardown code.');
+        clearInterval(intervalID);
+    }
+});
+
+let cancelTime$ = fromEvent(tmrBtn, 'click');
+
+timer$.pipe(
+    // take(3)
+    takeUntil(cancelTime$)
+)
+.subscribe(
+    value => tmrDiv.innerHTML += `${new Date().toLocaleTimeString()} (${value}) <br>`,
+    null,
+    () => console.log('All done !!')
+);
+
+
 
 //#endregion
