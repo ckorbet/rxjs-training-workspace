@@ -1,7 +1,7 @@
-import { Observable, of, from, fromEvent, concat, Subscriber, interval } from 'rxjs';
+import { Observable, of, from, fromEvent, concat, Subscriber, interval, throwError } from 'rxjs';
 import { ajax } from 'rxjs/ajax';
 import { allBooks, allReaders } from './data';
-import { mergeMap, filter, tap } from 'rxjs/operators';
+import { mergeMap, filter, tap, catchError } from 'rxjs/operators';
 
 //#region Creating observables
 // ending with $ is a RxJS naming convention
@@ -111,12 +111,19 @@ import { mergeMap, filter, tap } from 'rxjs/operators';
 
 //#region Using Operators
 
-ajax('/api/books')
+ajax('/api/errors/500')
     .pipe(
         mergeMap(ajaxResponse => ajaxResponse.response),
         filter(book => book.publicationYear > 1950),
-        tap(oldBook => console.log(`Title: ${oldBook.title}`))
+        tap(oldBook => console.log(`Title: ${oldBook.title}`)),
+        // catchError(err => of({title: 'Corduroy', author: 'Don Freeman'}))
+        // catchError((err, caught) => caught)
+        // catchError(err => { throw `Something wrong happened - ${err}`; } )
+        catchError(err => { return throwError(err.message); } )
     )
-    .subscribe(value => console.log(value));
+    .subscribe(
+        value => console.info(`VALUE: ${value.title}`),
+        error => console.error(`ERROR: ${error}`)
+    );
 
 //#endregion
