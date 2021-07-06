@@ -1,4 +1,4 @@
-import { Observable, of, from, fromEvent, concat, Subscriber, interval, throwError } from 'rxjs';
+import { Observable, of, from, fromEvent, concat, Subscriber, interval, throwError, Subject } from 'rxjs';
 import { ajax } from 'rxjs/ajax';
 import { allBooks, allReaders } from './data';
 import { mergeMap, filter, tap, catchError, take, takeUntil, subscribeOn } from 'rxjs/operators';
@@ -162,35 +162,81 @@ import { mergeMap, filter, tap, catchError, take, takeUntil, subscribeOn } from 
  * must return a function, that receives an observable, and returns an observable
  * the observable inside the function contains the logic
  */
-const grabAndLogClassics = (year, log) => {
-    return source$ => {
-        return new Observable(subscriber => {
-            return source$.subscribe(
-                book => {
-                    if(book.publicationYear < year) {
-                        subscriber.next(book);
-                        if(log) {
-                            console.log(`Classic: ${book.title}`);
-                        }
-                    }
-                },
-                err => subscriber.error(err),
-                () => subscriber.complete()
-            );
-        });
-    }
-}
+// const grabAndLogClassics = (year, log) => {
+//     return source$ => {
+//         return new Observable(subscriber => {
+//             return source$.subscribe(
+//                 book => {
+//                     if(book.publicationYear < year) {
+//                         subscriber.next(book);
+//                         if(log) {
+//                             console.log(`Classic: ${book.title}`);
+//                         }
+//                     }
+//                 },
+//                 err => subscriber.error(err),
+//                 () => subscriber.complete()
+//             );
+//         });
+//     }
+// }
 
-ajax('/api/books')
-    .pipe(
-        mergeMap(ajaxResponse => ajaxResponse.response),
-        // filter(book => book.publicationYear > 1950),
-        // tap(oldBook => console.log(`Title: ${oldBook.title}`))
-        grabAndLogClassics(1950, true)
-    )
-    .subscribe(
-        value => console.info(`VALUE: ${value.title}`),
-        error => console.error(`ERROR: ${error}`)
-    );
+// ajax('/api/books')
+//     .pipe(
+//         mergeMap(ajaxResponse => ajaxResponse.response),
+//         // filter(book => book.publicationYear > 1950),
+//         // tap(oldBook => console.log(`Title: ${oldBook.title}`))
+//         grabAndLogClassics(1950, true)
+//     )
+//     .subscribe(
+//         value => console.info(`VALUE: ${value.title}`),
+//         error => console.error(`ERROR: ${error}`)
+//     );
 
 //#endregion
+
+//#region Using Subjects and Multicasted Observables
+
+// let subject$ = new Subject();
+
+// subject$.subscribe({
+//     next: value => console.log(`Observer 1: ${value}`)
+// });
+
+// subject$.subscribe({
+//     next: value => console.log(`Observer 2: ${value}`)
+// });
+
+// subject$.next('Hello !!');
+
+// let source$ = new Observable(subscriber => {
+//     subscriber.next('Greetings !!');
+// });
+
+// source$.subscribe(subject$);
+
+let source$ = interval(1000).pipe(
+    take(4)
+);
+
+let subject$ =  new Subject();
+source$.subscribe(subject$);
+
+source$.subscribe({
+    next: value => console.log(`Observer 1: ${value}`)
+});
+
+setTimeout(() => {
+    source$.subscribe({
+        next: value => console.log(`Observer 2: ${value}`)
+    });
+}, 1000);
+
+setTimeout(() => {
+    source$.subscribe({
+        next: value => console.log(`Observer 3: ${value}`)
+    });
+}, 2000);
+
+//#endregion
+
