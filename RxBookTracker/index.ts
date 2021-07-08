@@ -1,7 +1,9 @@
-import { Observable, of, from, fromEvent, concat, Subscriber, interval, throwError, Subject } from 'rxjs';
+import { Observable, of, from, fromEvent, concat, Subscriber, interval, throwError, 
+         Subject,  asyncScheduler, asapScheduler, queueScheduler, merge } from 'rxjs';
 import { ajax } from 'rxjs/ajax';
 import { allBooks, allReaders } from './data';
-import { mergeMap, filter, tap, catchError, take, takeUntil, subscribeOn } from 'rxjs/operators';
+import { mergeMap, filter, tap, catchError, take, takeUntil, 
+         subscribeOn, multicast, refCount,  publish, share, observeOn} from 'rxjs/operators';
 
 //#region Creating observables
 // ending with $ is a RxJS naming convention
@@ -215,28 +217,58 @@ import { mergeMap, filter, tap, catchError, take, takeUntil, subscribeOn } from 
 
 // source$.subscribe(subject$);
 
-let source$ = interval(1000).pipe(
-    take(4)
-);
+// let source$ = interval(1000).pipe(
+//     take(4)
+// );
 
-let subject$ =  new Subject();
-source$.subscribe(subject$);
+// let subject$ =  new Subject();
+// source$.subscribe(subject$);
 
-source$.subscribe({
-    next: value => console.log(`Observer 1: ${value}`)
-});
+// source$.subscribe({
+//     next: value => console.log(`Observer 1: ${value}`)
+// });
 
-setTimeout(() => {
-    source$.subscribe({
-        next: value => console.log(`Observer 2: ${value}`)
-    });
-}, 1000);
+// setTimeout(() => {
+//     source$.subscribe({
+//         next: value => console.log(`Observer 2: ${value}`)
+//     });
+// }, 1000);
 
-setTimeout(() => {
-    source$.subscribe({
-        next: value => console.log(`Observer 3: ${value}`)
-    });
-}, 2000);
+// setTimeout(() => {
+//     source$.subscribe({
+//         next: value => console.log(`Observer 3: ${value}`)
+//     });
+// }, 2000);
+
+//#endregion
+
+//#region Controlling Execution with Schedulers
+
+// console.log('Start script.');
+
+// let queue$ = of('QueueScheduler (synchronous)', queueScheduler);
+
+// let asap$ = of('AsapScheduler (async micro task)', asapScheduler);
+
+// let async$ = of('AsyncScheduler (async task)', asyncScheduler);
+
+// merge(queue$, asap$, async$)
+// .subscribe({
+//     next: value => console.log(value)
+// });
+
+// console.log('End script.');
+
+console.log('Start script.');
+
+from([1,2,3,4], queueScheduler).pipe(
+    tap(value => console.log(`Value: ${value}`)),
+    observeOn(asyncScheduler),
+    tap(value => console.log(`\tDoubled value: ${value * 2}`))
+)
+.subscribe();
+
+console.log('End script.');
 
 //#endregion
 
