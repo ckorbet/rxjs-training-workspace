@@ -1,5 +1,5 @@
 import { Observable, of, from, fromEvent, concat, Subscriber, interval, throwError, 
-         Subject,  asyncScheduler, asapScheduler, queueScheduler, merge } from 'rxjs';
+         Subject,  asyncScheduler, asapScheduler, queueScheduler, merge, } from 'rxjs';
 import { ajax } from 'rxjs/ajax';
 import { allBooks, allReaders } from './data';
 import { mergeMap, filter, tap, catchError, take, takeUntil, 
